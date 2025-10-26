@@ -1,0 +1,80 @@
+@startuml System Architecture
+
+!define RECTANGLE class
+
+package "Frontend Layer" {
+    [Streamlit UI] as UI
+    [Chat Interface] as Chat
+    [Visualization Engine] as Viz
+}
+
+package "API Gateway" {
+    [FastAPI Server] as API
+    [Authentication] as Auth
+    [Rate Limiting] as Rate
+}
+
+package "Core Processing" {
+    [Query Processor] as QP
+    [LangChain Orchestrator] as LC
+    [SQL Generator] as SQLGen
+    [Query Validator] as Validator
+}
+
+package "AI/ML Services" {
+    [OpenAI/LLM API] as LLM
+    [RAG Pipeline] as RAG
+    [FAISS Vector Store] as FAISS
+    [Insight Generator] as Insights
+}
+
+package "Data Layer" {
+    [PostgreSQL Database] as DB
+    [Schema Metadata] as Schema
+    [Query Cache] as Cache
+}
+
+package "Security & Monitoring" {
+    [Query Sanitizer] as Sanitizer
+    [Audit Logger] as Logger
+    [Error Handler] as ErrorHandler
+}
+
+' Frontend connections
+UI --> Chat
+Chat --> API
+UI --> Viz
+
+' API Gateway connections
+API --> Auth
+API --> Rate
+API --> QP
+
+' Core Processing flow
+QP --> LC
+LC --> SQLGen
+SQLGen --> Validator
+Validator --> DB
+LC --> RAG
+LC --> Insights
+
+' AI/ML connections
+SQLGen --> LLM
+RAG --> FAISS
+RAG --> Schema
+Insights --> LLM
+
+' Data connections
+DB --> Cache
+Schema --> FAISS
+
+' Security connections
+QP --> Sanitizer
+API --> Logger
+LC --> ErrorHandler
+
+' External connections
+Viz --> Cache
+Viz --> DB
+
+@enduml

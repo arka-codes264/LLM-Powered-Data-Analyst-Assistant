@@ -1,0 +1,97 @@
+@startuml ER Diagram
+
+entity "users" as users {
+    * id : uuid <<PK>>
+    --
+    * email : varchar(255)
+    * username : varchar(100)
+    * created_at : timestamp
+    * last_login : timestamp
+    * is_active : boolean
+}
+
+entity "sessions" as sessions {
+    * id : uuid <<PK>>
+    --
+    * user_id : uuid <<FK>>
+    * session_token : varchar(255)
+    * created_at : timestamp
+    * expires_at : timestamp
+    * is_active : boolean
+}
+
+entity "queries" as queries {
+    * id : uuid <<PK>>
+    --
+    * session_id : uuid <<FK>>
+    * user_id : uuid <<FK>>
+    * natural_query : text
+    * generated_sql : text
+    * execution_time : float
+    * status : varchar(50)
+    * created_at : timestamp
+}
+
+entity "query_results" as query_results {
+    * id : uuid <<PK>>
+    --
+    * query_id : uuid <<FK>>
+    * result_data : jsonb
+    * insights : text
+    * chart_config : jsonb
+    * row_count : integer
+    * created_at : timestamp
+}
+
+entity "database_schemas" as schemas {
+    * id : uuid <<PK>>
+    --
+    * database_name : varchar(100)
+    * table_name : varchar(100)
+    * column_name : varchar(100)
+    * data_type : varchar(50)
+    * is_nullable : boolean
+    * column_description : text
+    * table_description : text
+    * created_at : timestamp
+}
+
+entity "schema_embeddings" as embeddings {
+    * id : uuid <<PK>>
+    --
+    * schema_id : uuid <<FK>>
+    * embedding_vector : vector(1536)
+    * metadata : jsonb
+    * created_at : timestamp
+}
+
+entity "conversation_memory" as memory {
+    * id : uuid <<PK>>
+    --
+    * session_id : uuid <<FK>>
+    * query_sequence : integer
+    * context_data : jsonb
+    * created_at : timestamp
+}
+
+entity "audit_logs" as logs {
+    * id : uuid <<PK>>
+    --
+    * user_id : uuid <<FK>>
+    * action : varchar(100)
+    * resource : varchar(100)
+    * details : jsonb
+    * ip_address : inet
+    * created_at : timestamp
+}
+
+' Relationships
+users ||--o{ sessions : "sessions.user_id -> users.id"
+users ||--o{ queries : "queries.user_id -> users.id"
+sessions ||--o{ queries : "queries.session_id -> sessions.id"
+sessions ||--o{ memory : "memory.session_id -> sessions.id"
+queries ||--|| query_results : "query_results.query_id -> queries.id"
+schemas ||--o{ embeddings : "embeddings.schema_id -> schemas.id"
+users ||--o{ logs : "logs.user_id -> users.id"
+
+@enduml

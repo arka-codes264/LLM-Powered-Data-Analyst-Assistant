@@ -1,0 +1,74 @@
+@startuml UI Navigation Flow
+
+state "Home Dashboard" as Home {
+    [*] --> Home
+    Home : - Welcome message
+    Home : - Recent queries
+    Home : - Quick start guide
+}
+
+state "Chat Interface" as Chat {
+    Chat : - Query input box
+    Chat : - Conversation history
+    Chat : - SQL preview
+    Chat : - Results display
+}
+
+state "Query Results" as Results {
+    Results : - Data table
+    Results : - Auto-generated chart
+    Results : - AI insights
+    Results : - Export options
+}
+
+state "Schema Explorer" as Schema {
+    Schema : - Database tables
+    Schema : - Column details
+    Schema : - Sample queries
+    Schema : - Relationships view
+}
+
+state "Query History" as History {
+    History : - Past queries list
+    History : - Saved queries
+    History : - Performance metrics
+    History : - Export history
+}
+
+state "Settings" as Settings {
+    Settings : - Database connection
+    Settings : - LLM preferences
+    Settings : - Visualization options
+    Settings : - User profile
+}
+
+' Navigation paths
+Home --> Chat : "Start New Query"
+Home --> History : "View History"
+Home --> Schema : "Explore Schema"
+
+Chat --> Results : "Execute Query"
+Chat --> Schema : "Browse Tables"
+Chat --> Home : "Back to Home"
+
+Results --> Chat : "New Query"
+Results --> History : "Save Query"
+Results --> Home : "Back to Home"
+
+Schema --> Chat : "Use in Query"
+Schema --> Home : "Back to Home"
+
+History --> Chat : "Rerun Query"
+History --> Results : "View Results"
+History --> Home : "Back to Home"
+
+Settings --> Home : "Back to Home"
+Home --> Settings : "Settings"
+
+' Quick access from any state
+Chat --> Settings : "Settings"
+Results --> Settings : "Settings"
+Schema --> Settings : "Settings"
+History --> Settings : "Settings"
+
+@enduml

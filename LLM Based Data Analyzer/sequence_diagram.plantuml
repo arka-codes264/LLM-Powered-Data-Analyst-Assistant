@@ -1,0 +1,145 @@
+@startuml Sequence Diagram
+
+actor User
+participant "Streamlit UI" as UI
+participant "FastAPI Server" as API
+participant "Query Processor" as QP
+participant "RAG Pipeline" as RAG
+participant "LangChain Orchestrator" as LC
+participant "LLM Service" as LLM
+participant "Database Service" as DB
+participant "Visualization Engine" as VE
+participant "Insight Generator" as IG
+
+User -> UI: Enter natural language query
+    note right
+        Input: "Show me last month's top 5 performing products"
+    end note
+
+UI -> API: POST /api/query
+    note right
+        Request: {
+            "query": "Show me last month's top 5 performing products",
+            "user_id": "user123",
+            "session_id": "session456"
+        }
+    end note
+
+API -> QP: process_query(query, user_id)
+
+QP -> RAG: retrieve_schema(query)
+    note right
+        Input: "Show me last month's top 5 performing products"
+    end note
+
+RAG -> RAG: similarity_search(query, k=5)
+RAG --> QP: relevant_schema_info
+    note right
+        Output: [
+            {
+                "table": "products",
+                "columns": ["id", "name", "category"],
+                "description": "Product catalog"
+            },
+            {
+                "table": "sales",
+                "columns": ["product_id", "amount", "date"],
+                "description": "Sales transactions"
+            }
+        ]
+    end note
+
+QP -> LC: create_sql_chain()
+LC -> LLM: generate_sql(query + schema_context)
+    note right
+        Input: {
+            "query": "Show me last month's top 5 performing products",
+            "schema": "tables: products(id, name), sales(product_id, amount, date)",
+            "examples": "SELECT p.name, SUM(s.amount) as total..."
+        }
+    end note
+
+LLM --> LC: generated_sql
+    note right
+        Output: {
+            "sql": "SELECT p.name, SUM(s.amount) as revenue FROM products p JOIN sales s ON p.id = s.product_id WHERE s.date >= DATE_SUB(NOW(), INTERVAL 1 MONTH) GROUP BY p.id, p.name ORDER BY revenue DESC LIMIT 5"
+        }
+    end note
+
+LC --> QP: sql_query
+
+QP -> QP: validate_query(sql)
+    note right
+        Validation checks:
+        - Read-only operations
+        - No DELETE/UPDATE/DROP
+        - Proper syntax
+        - Schema compliance
+    end note
+
+QP -> DB: execute_query(validated_sql)
+DB --> QP: query_results
+    note right
+        Output: DataFrame {
+            "name": ["Product A", "Product B", "Product C", "Product D", "Product E"],
+            "revenue": [15000, 12000, 10000, 8000, 6000]
+        }
+    end note
+
+par Parallel Processing
+    QP -> VE: auto_visualize(results)
+    VE -> VE: detect_chart_type(results)
+    VE -> VE: create_bar_chart(results)
+    VE --> QP: plotly_figure
+        note right
+            Output: {
+                "chart_type": "bar",
+                "figure": plotly.graph_objects.Figure
+            }
+        end note
+and
+    QP -> IG: generate_insights(results, original_query)
+    IG -> LLM: analyze_data(results + context)
+    LLM --> IG: insights_text
+        note right
+            Output: {
+                "insights": "Product A leads with $15,000 revenue, 25% higher than Product B. The top 5 products generated $51,000 total revenue last month."
+            }
+        end note
+    IG --> QP: formatted_insights
+end
+
+QP -> QP: create_query_result()
+QP --> API: QueryResult
+    note right
+        Output: {
+            "sql": "SELECT p.name, SUM(s.amount)...",
+            "data": DataFrame,
+            "insights": "Product A leads with...",
+            "visualization": plotly_figure,
+            "execution_time": 1.2,
+            "status": "SUCCESS"
+        }
+    end note
+
+API --> UI: JSON response
+UI -> UI: render_results()
+UI --> User: Display chart + insights + SQL
+
+User -> UI: "Why did Product A perform so well?"
+    note right
+        Follow-up query with conversation context
+    end note
+
+UI -> API: POST /api/query (with context)
+API -> QP: process_query(follow_up_query, context)
+note over QP: Uses conversation memory from LangChain
+QP -> LC: execute_with_context(query, previous_results)
+LC -> LLM: generate_contextual_response()
+LLM --> LC: contextual_analysis
+LC --> QP: enhanced_insights
+QP --> API: QueryResult
+API --> UI: JSON response
+UI --> User: Contextual analysis
+
+@enduml

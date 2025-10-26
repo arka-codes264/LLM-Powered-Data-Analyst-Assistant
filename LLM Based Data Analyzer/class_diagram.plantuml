@@ -1,0 +1,132 @@
+@startuml Class Diagram
+
+interface IQueryProcessor {
+    +process_query(query: str, user_id: str): QueryResult
+    +validate_query(sql: str): ValidationResult
+}
+
+interface ILLMService {
+    +generate_sql(query: str, schema: str): str
+    +generate_insights(data: DataFrame, query: str): str
+}
+
+interface IRAGService {
+    +retrieve_schema(query: str): List[SchemaInfo]
+    +embed_schema(schema: dict): None
+}
+
+interface IVisualizationService {
+    +auto_visualize(data: DataFrame): PlotlyFigure
+    +detect_chart_type(data: DataFrame): ChartType
+}
+
+class QueryProcessor implements IQueryProcessor {
+    -llm_service: ILLMService
+    -rag_service: IRAGService
+    -db_service: IDatabaseService
+    +process_query(query: str, user_id: str): QueryResult
+    +validate_query(sql: str): ValidationResult
+    -sanitize_input(query: str): str
+}
+
+class LangChainOrchestrator {
+    -chain: SQLDatabaseChain
+    -llm: ChatOpenAI
+    -db: SQLDatabase
+    +create_sql_chain(): SQLDatabaseChain
+    +execute_chain(query: str): str
+    +add_conversation_memory(query: str, result: str): None
+}
+
+class RAGPipeline implements IRAGService {
+    -vector_store: FAISS
+    -embeddings: OpenAIEmbeddings
+    -schema_metadata: Dict[str, Any]
+    +retrieve_schema(query: str): List[SchemaInfo]
+    +embed_schema(schema: dict): None
+    +similarity_search(query: str, k: int): List[Document]
+}
+
+class DatabaseService {
+    -engine: AsyncEngine
+    -connection_pool: Pool
+    +execute_query(sql: str): DataFrame
+    +get_schema_info(): Dict[str, Any]
+    +validate_connection(): bool
+    -ensure_read_only(): None
+}
+
+class VisualizationEngine implements IVisualizationService {
+    +auto_visualize(data: DataFrame): PlotlyFigure
+    +detect_chart_type(data: DataFrame): ChartType
+    +create_bar_chart(data: DataFrame): PlotlyFigure
+    +create_line_chart(data: DataFrame): PlotlyFigure
+    +create_pie_chart(data: DataFrame): PlotlyFigure
+}
+
+class InsightGenerator {
+    -llm_service: ILLMService
+    +generate_insights(data: DataFrame, query: str): str
+    +summarize_trends(data: DataFrame): str
+    +explain_results(data: DataFrame, sql: str): str
+}
+
+class QueryResult {
+    +sql: str
+    +data: DataFrame
+    +insights: str
+    +visualization: PlotlyFigure
+    +execution_time: float
+    +status: QueryStatus
+}
+
+class SchemaInfo {
+    +table_name: str
+    +columns: List[ColumnInfo]
+    +relationships: List[Relationship]
+    +description: str
+}
+
+class ColumnInfo {
+    +name: str
+    +data_type: str
+    +nullable: bool
+    +description: str
+}
+
+class ValidationResult {
+    +is_valid: bool
+    +errors: List[str]
+    +warnings: List[str]
+    +sanitized_sql: str
+}
+
+enum QueryStatus {
+    SUCCESS
+    FAILED
+    TIMEOUT
+    INVALID_SQL
+}
+
+enum ChartType {
+    BAR
+    LINE
+    PIE
+    SCATTER
+    TABLE
+}
+
+' Relationships
+QueryProcessor --> LangChainOrchestrator
+QueryProcessor --> RAGPipeline
+QueryProcessor --> DatabaseService
+QueryProcessor --> VisualizationEngine
+QueryProcessor --> InsightGenerator
+
+LangChainOrchestrator --> DatabaseService
+RAGPipeline --> SchemaInfo
+VisualizationEngine --> ChartType
+QueryProcessor --> QueryResult
+QueryResult --> QueryStatus
+
+@enduml
